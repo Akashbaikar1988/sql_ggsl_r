@@ -1,0 +1,59 @@
+h1 {
+    font-family: "Times New Roman", Times, serif;
+    color: #000000;
+}
+.my-chunk {
+  width: 100%;
+  overflow-x: auto;
+  clear: both;
+}
+.content-block {
+    width: 100%;
+    clear: both;
+    overflow-x: auto;
+}
+
+.content-block pre {
+    white-space: pre-wrap;
+}
+
+.keyword{
+    color:#569cd6;
+    font-weight:600;
+}
+
+.function{
+    color:#569cd6;
+    font-weight:600;
+}
+.string{
+    color:#ce9178;
+}
+
+.comment{
+    color:#2e2727;
+}
+
+.column{
+    color:#2e2727;
+}
+.code-box {
+    background: #f8f9fa;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 15px 0;
+    overflow-x: auto;
+    font-family: "Consolas", "Courier New", monospace;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.code-box pre {
+    margin: 0;
+    white-space: pre;
+}
+pre {
+    margin: 0;
+    line-height: 1;
+    padding: 5px;
+}

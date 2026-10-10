@@ -1,0 +1,17 @@
+<div class="code-box">
+<pre>
+<span class="comment">```{sql}</span>
+<span class="comment">--| include: false</span>
+<span class="comment">--| connection: db1</span>
+<span class="comment">--| tblestyle: striped</span>
+<span class="comment">--| tbl-cap: "Table-1: First 5 rows of the data"</span>
+<span class="keyword">SELECT</span>
+    <span class="column">Country</span>,
+    <span class="column">"Start Year"</span>,
+    <span class="column">"End Year"</span>,
+    <span class="column">"Total Affected"</span>
+<span class="keyword">FROM</span> natural_disaster
+<span class="keyword">LIMIT</span> 5;
+<span class="comment">```</span>
+</pre>
+</div>

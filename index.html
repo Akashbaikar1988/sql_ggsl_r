@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.14">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Dr.&nbsp;Akash Kumar Baikar">
+
+<title>Integrating SQL, GGSQL and R</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="index_files/libs/clipboard/clipboard.min.js"></script>
+<script src="index_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="index_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="index_files/libs/quarto-html/popper.min.js"></script>
+<script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="index_files/libs/quarto-html/anchor.min.js"></script>
+<link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-7832d8100c30e5308af25d4a964213de.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="index_files/libs/bootstrap/bootstrap-4fab7da059a6feec3e3641fb57eee7e2.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="index_files/libs/htmltools-fill-0.5.9/fill.css" rel="stylesheet">
+
+<script src="index_files/libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+
+<script src="index_files/libs/ggsql_hep-binding-0.5.2.9000/ggsql_hep.js"></script>
+
+<link href="index_files/libs/hephaestus-svg-0.4.1/ggsql_hep.css" rel="stylesheet">
+
+<script src="index_files/libs/hephaestus-svg-0.4.1/hephaestus-assets.js"></script>
+
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#r-chunk-to-load-the-necessary-packages" id="toc-r-chunk-to-load-the-necessary-packages" class="nav-link active" data-scroll-target="#r-chunk-to-load-the-necessary-packages">R chunk to load the necessary packages</a></li>
+  <li><a href="#r-chunk-to-create-duckdb-data-connection-using-local-file" id="toc-r-chunk-to-create-duckdb-data-connection-using-local-file" class="nav-link" data-scroll-target="#r-chunk-to-create-duckdb-data-connection-using-local-file">R chunk to create DuckDB data connection using local file</a></li>
+  <li><a href="#sql-chuck-to-display-selected-columns-from-the-natural-disaster-database" id="toc-sql-chuck-to-display-selected-columns-from-the-natural-disaster-database" class="nav-link" data-scroll-target="#sql-chuck-to-display-selected-columns-from-the-natural-disaster-database">SQL chuck to display selected columns from the natural disaster database</a></li>
+  <li><a href="#sql-chunk-to-filter-data-and-save-as-r-dataframe" id="toc-sql-chunk-to-filter-data-and-save-as-r-dataframe" class="nav-link" data-scroll-target="#sql-chunk-to-filter-data-and-save-as-r-dataframe">SQL chunk to filter data and save as R dataframe</a></li>
+  <li><a href="#r-chunk-to-validate-the-brics-data" id="toc-r-chunk-to-validate-the-brics-data" class="nav-link" data-scroll-target="#r-chunk-to-validate-the-brics-data">R chunk to validate the BRICS data</a></li>
+  <li><a href="#ggsql-chunk-for-scatter-plot-using-r-dataframe" id="toc-ggsql-chunk-for-scatter-plot-using-r-dataframe" class="nav-link" data-scroll-target="#ggsql-chunk-for-scatter-plot-using-r-dataframe">GGSQL chunk for scatter plot using R dataframe</a></li>
+  <li><a href="#ggsql-chunk-for-bar-plot-using-duckdb" id="toc-ggsql-chunk-for-bar-plot-using-duckdb" class="nav-link" data-scroll-target="#ggsql-chunk-for-bar-plot-using-duckdb">GGSQL chunk for bar plot using DuckDB</a></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Integrating SQL, GGSQL and R</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Dr.&nbsp;Akash Kumar Baikar </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+<div>
+  <div class="abstract">
+    <div class="block-title">Abstract</div>
+    A step-by-step tutorial on combining native SQL queries, plotting with ggsql, and integrating SQL data in R within a single Quarto document using knitr.
+  </div>
+</div>
+
+
+</header>
+
+
+<section id="r-chunk-to-load-the-necessary-packages" class="level1">
+<h1>R chunk to load the necessary packages</h1>
+<div class="code-box">
+<pre><span class="comment">```{r}</span>
+<span class="comment">#| echo: true</span>
+<span class="comment">#| include: true</span>
+<span class="comment">#| eval: true</span>
+<span class="comment">#| context: setup</span>
+<span class="comment">#| message: false</span>
+<span class="comment">#| warning: false</span>
+
+<span class="function">library</span>(<span class="column">Statamarkdown</span>)
+<span class="function">library</span>(<span class="column">knitr</span>)
+<span class="function">library</span>(<span class="column">DBI</span>)
+<span class="function">library</span>(<span class="column">duckdb</span>)
+
+<span class="comment">```</span>
+</pre>
+</div>
+</section>
+<section id="r-chunk-to-create-duckdb-data-connection-using-local-file" class="level1">
+<h1>R chunk to create DuckDB data connection using local file</h1>
+<div class="code-box">
+<pre><span class="comment">```{r}</span>
+<span class="comment">#| echo: false</span>
+<span class="comment">#| include: true</span>
+<span class="comment">#| context: setup</span>
+<span class="comment">#| message: false</span>
+<span class="comment">#| warning: false</span>
+<span class="column">disaster_data</span> &lt;- <span class="function">readxl::</span><span class="function">read_xlsx</span>(<span class="string">"public_emdat.xlsx"</span>)
+<span class="column">db1</span> &lt;- <span class="function">dbConnect</span>(<span class="column"><span class="function">duckdb</span>(),"disaster.duckdb")
+<span class="function">dbWriteTable</span>(
+    <span class="column">db1</span>,
+    <span class="string">"natural_disaster"</span>,
+    <span class="column">disaster_data</span>,overwrite = TRUE
+)
+<span class="comment">```</span>
+</span></pre>
+</div>
+<div class="cell" data-context="setup">
+<div class="cell-output cell-output-error">
+<pre><code>Error in `.local()`:
+! Table natural_disaster already exists. Set `overwrite = TRUE` if you want to remove the existing table. Set `append = TRUE` if you would like to add the new data to the existing table.</code></pre>
+</div>
+</div>
+</section>
+<section id="sql-chuck-to-display-selected-columns-from-the-natural-disaster-database" class="level1">
+<h1>SQL chuck to display selected columns from the natural disaster database</h1>
+<div class="code-box">
+<pre><span class="comment">```{sql}</span>
+<span class="comment">--| include: false</span>
+<span class="comment">--| connection: db1</span>
+<span class="comment">--| tblestyle: striped</span>
+<span class="comment">--| tbl-cap: "Table-1: First 5 rows of the data"</span>
+<span class="keyword">SELECT</span>
+    <span class="column">Country</span>,
+    <span class="column">"Start Year"</span>,
+    <span class="column">"End Year"</span>,
+    <span class="column">"Total Affected"</span>
+<span class="keyword">FROM</span> natural_disaster
+<span class="keyword">LIMIT</span> 5;
+<span class="comment">```</span>
+</pre>
+</div>
+<div class="cell" data-tblestyle="striped" data-tbl-cap="Table-1: First 5 rows of data">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Table-1: First 5 rows of data</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Country</th>
+<th style="text-align: right;">Start Year</th>
+<th style="text-align: right;">End Year</th>
+<th style="text-align: right;">Total Affected</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Ecuador</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">8512</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Kenya</td>
+<td style="text-align: right;">2026</td>
+<td style="text-align: right;">2026</td>
+<td style="text-align: right;">27</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Afghanistan</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1304600</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Afghanistan</td>
+<td style="text-align: right;">2026</td>
+<td style="text-align: right;">2026</td>
+<td style="text-align: right;">73309</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Angola</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">27728</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="sql-chunk-to-filter-data-and-save-as-r-dataframe" class="level1">
+<h1>SQL chunk to filter data and save as R dataframe</h1>
+<div class="code-box">
+<pre><span class="comment">```{sql}</span>
+<span class="comment">--| connection: db1</span>
+<span class="comment">--| output.var: disaster_brics</span>
+<span class="keyword">SELECT</span>
+    <span class="column">Country</span>,
+    <span class="column">"Start Year"</span>,
+    <span class="keyword">SUM</span>(<span class="column">"Total Deaths"</span>) <span class="keyword">AS</span> total_deaths
+<span class="keyword">FROM</span> natural_disaster
+<span class="keyword">WHERE</span> Country <span class="keyword">IN</span> (
+    <span class="string">'Brazil'</span>,
+    <span class="string">'India'</span>,
+    <span class="string">'China'</span>,
+    <span class="string">'South Africa'</span>,
+    <span class="string">'Russian Federation'</span>
+)
+<span class="keyword">GROUP BY</span>
+    Country, <span class="column">"Start Year"</span>
+<span class="keyword">ORDER BY</span>
+    Country, <span class="column">"Start Year";</span>
+<span class="comment">```</span>
+</pre>
+</div>
+</section>
+<section id="r-chunk-to-validate-the-brics-data" class="level1">
+<h1>R chunk to validate the BRICS data</h1>
+<div class="code-box">
+<pre><span class="comment">```{r}</span>
+<span class="comment">##| echo: true</span>
+<span class="comment">##| eval: true</span>
+<span class="keyword">table</span>(disaster_brics$Country) 
+<span class="comment">```</span>
+</pre>
+</div>
+<div class="cell" data-context="setup">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+            Brazil              China              India Russian Federation 
+                27                 27                 27                 25 
+      South Africa 
+                26 </code></pre>
+</div>
+</div>
+</section>
+<section id="ggsql-chunk-for-scatter-plot-using-r-dataframe" class="level1">
+<h1>GGSQL chunk for scatter plot using R dataframe</h1>
+<div class="code-box">
+<pre><span class="comment">```{ggsql}</span>
+<span class="comment">#| echo: false</span>
+<span class="keyword">SELECT</span>
+    <span class="column"></span>LN(<span class="column">"Total Damage ('000 US$)"</span> + 1) <span class="keyword"></span>AS cost,
+    <span class="column"></span>LN(<span class="column">"Total Affected"</span> + 1) <span class="keyword"></span>AS affected,
+    <span class="column">"Start Year"</span>,
+    <span class="column">"Total Affected"</span>,
+    <span class="column">"Total Deaths"</span>,
+    <span class="column">"Country"</span>,
+    <span class="column">"Disaster Subgroup"</span>
+<span class="keyword">FROM</span> r:disaster_data
+<span class="keyword">WHERE</span> <span class="column">"Country"</span><span class="keyword"></span>IN (
+    'Brazil',
+    'India',
+    'China',
+    'South Africa',
+    'Russian Federation'
+)
+<span class="keyword">AND</span><span class="column">"Start Year"</span><span class="keyword">IN</span> (
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+)
+<span class="keyword">VISUALIZE</span>
+    cost <span class="keyword">AS</span> x,
+    affected <span class="keyword">AS</span> y
+<span class="keyword"></span>DRAW point
+<span class="keyword"></span><span class="keyword">MAPPING</span>
+    <span class="column">Country</span> <span class="keyword">AS</span> stroke,
+    <span class="column">Country</span> <span class="keyword">AS</span> fill
+<span class="keyword">SETTING</span>
+    size =&gt; 6
+<span class="keyword">DRAW</span> text
+<span class="keyword">MAPPING</span>
+    <span class="column">"Disaster Subgroup"</span> AS label
+<span class="keyword"></span>SETTING
+    fontsize =&gt; 4,
+    vjust =&gt; 1
+<span class="keyword">LABEL</span>
+    title =&gt; 'Log(Total Damage) vs Log(Total Affected)'
+<span class="comment">```</span>
+</pre>
+</div>
+<div class="cell">
+<ggsql-hep class="ggsql_hep html-widget html-fill-item" id="htmlwidget-74163b1aad80bc28dd02" style="display:block;width:100%;height:464px;"></ggsql-hep>
+<script type="application/json" data-for="htmlwidget-74163b1aad80bc28dd02">{"x":{"hep":"SEVQSFBMT1QCAAAAAABIRUFELQAAABNfX2hlcGhhZXN0dXNfcm9vdF9fAQAAgD8AAIA/AACA\nPwAAgD8AAAUwLjQuMWZvbnQDAAAAAgAAU1RSU3IAAAAKBmNpcmNsZQZCcmF6aWwFQ2hpbmEF\nSW5kaWESUnVzc2lhbiBGZWRlcmF0aW9uDFNvdXRoIEFmcmljYQ5NZXRlb3JvbG9naWNhbAxI\neWRyb2xvZ2ljYWwOQ2xpbWF0b2xvZ2ljYWwLR2VvcGh5c2ljYWxHRU9NAQAAAABTSEVUfggA\nAAH7EBoEYmFzZRsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALYmxvY2tfcXVvdGWfAQAA\nAAAAAQQBAvYoXI/C9eA/AQAAAAAAAAAAAAAAAAEDAAAAAAAA8D8AAAAAAAAAAAADAAAAAAAA\n8D8AAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAPA/AAEEAQKa\nmZmZmZnJPwEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAAAAANA/AAAAAAxicm9r\nZW5faW1hZ2VqAAAAAAABAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAEAAAAAAAAA+D8AAAAAAAAA\nAAABAAAAAAAAAAAAAAAAAAAAgD8BAAAAAAAAAAhAAAAAAAAAAAhAAAAAAAAAAAhAAAAAAAAA\nAAhAAAAAAARjb2RlZwEJbW9ub3NwYWNlAAAAAQEzMzMzMzPrPwAAAAAAAAAAAAAAAAAAAQMA\nAAAAAADIPwMAAAAAAADIPwMAAAAAAADIPwMAAAAAAADIPwEEAQLsUbgeheuxPwEAAAEDAAAA\nAAAAyD8AAAAKY29kZV9ibG9ja5QBAQltb25vc3BhY2UAAAABATMzMzMzM+s/AAAAAAAAAAAB\nADMzMzMzM/c/AAAAAAEDAAAAAAAA8D8AAAAAAAAAAAADAAAAAAAA8D8AAAAAAAAAAAABAgAA\nAAAAAPA/AgAAAAAAAPA/AgAAAAAAAPA/AgAAAAAAAPA/AQQBAuxRuB6F67E/AQAAAQMAAAAA\nAADIPwAAAANkZWwcAAAAAAAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAJlbRwAAAEBAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAmgxpwEAAbwFAAABAQAAAAAAAAJAAAAAAAAAAAABADMzMzMz\n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\ndXRoIEFmcmljYQAAAAAFdmp1c3QKBAAAAAAAAAAAAENPTVCUAQAATQETX19oZXBoYWVzdHVz\nX3Jvb3RfXwEBAQEAAAAAAADwPwEBAAAAAAAA8D8ABgAAAAAAAAYAAAAAAAABEQEBAQEAC2dn\nc3FsX3BhbmVsARNfX2hlcGhhZXN0dXNfcm9vdF9fmgIBKExvZyhUb3RhbCBEYW1hZ2UpIHZz\nIExvZyhUb3RhbCBBZmZlY3RlZCkAAAAAAQRjb3N0AQhhZmZlY3RlZAJpAQEHQ291bnRyeQRm\naWxsAFMBUAAFBGZpbGwABGZpbGwMZmlsbF9vcGFjaXR5AQGamZmZmZnpPwlsaW5ld2lkdGgB\nAQAAAAAAAPA/BXNoYXBlAQIABHNpemUBAQAAAAAAABRAAAAAAAABbwEBB0NvdW50cnkGc3Ry\nb2tlAFcBVAAFDGZpbGxfb3BhY2l0eQEBmpmZmZmZ6T8JbGluZXdpZHRoAQEAAAAAAADwPwVz\naGFwZQECAARzaXplAQEAAAAAAAAUQAZzdHJva2UABnN0cm9rZQAAAAAAAQIBE19faGVwaGFl\nc3R1c19yb290X19QTE9UQTIAAAELZ2dzcWxfcGFuZWwBsWQLZ2dzcWxfcGFuZWwEBGZpbGwE\nZmlsbAZzdHJva2UGc3Ryb2tlAXgEcG9zMQF5BHBvczIAAAAAAAAAAgkBBHBvczEAAgAJAQRw\nb3MyAAAAAAABAAAAAALLIgVwb2ludAAIBGZpbGwBBfABAwICBQMFAgMCAQMDAwIDAwEFAgEE\nAgIEAgMBAgEDAgECAgMBAwIDAwMFBQEFAwICAgIDAwQEAwMDAwQBAwMCAwICAgIFAwIBAQEB\nAQIBAwEBAgMFAgMBAgIBAgICBQEBAgMDAQQDAgQCAgIBBQUFAwEEAwUCAQMFAgIDAgICAwIF\nAgEFAQEDBAICAwIFAQIBAQUBAwMDAwMDAwEDAgEDAgMDAwMFAgEDAQICAgUBAQICAwIDAgEB\nAQIDAgICAwQEAgQCAwICBQEFAQMFAgEDAQMBAQIFAQEBAQECAwUCAgEBBAIDAgUCAwMDAgMD\nAwIBDGZpbGxfb3BhY2l0eQIBmpmZmZmZ6T8JbGluZXdpZHRoAgEAAAAAAADwPwVzaGFwZQIC\nAARzaXplAgEAAAAAAAAUQAZzdHJva2UBBfABAwICBQMFAgMCAQMDAwIDAwEFAgEEAgIEAgMB\nAgEDAgECAgMBAwIDAwMFBQEFAwICAgIDAwQEAwMDAwQBAwMCAwICAgIFAwIBAQEBAQIBAwEB\nAgMFAgMBAgIBAgICBQEBAgMDAQQDAgQCAgIBBQUFAwEEAwUCAQMFAgIDAgICAwIFAgEFAQED\nBAICAwIFAQIBAQUBAwMDAwMDAwEDAgEDAgMDAwMFAgEDAQICAgUBAQICAwIDAgEBAQIDAgIC\nAwQEAgQCAwICBQEFAQMFAgEDAQMBAQIFAQEBAQECAwUCAgEBBAIDAgUCAwMDAgMDAwIBAXgB\nAPABAAAAAAAA+H8AAAAAAAD4f+b0A8YSpjBAAAAAAAAA+H8jm5kAfoIoQBq2fNlUcyZAAAAA\nAAAA+H8AAAAAAAD4f0xHiULHTipAAAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/AAAAAAAA+H/8\nveELfc4sQAAAAAAAAPh/AAAAAAAA+H94fKBKtuEpQO0Z1PABUCZAwzALmABnKkAAAAAAAAD4\nfwAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/M9ituP1LLUAAAAAAAAD4fwAAAAAA\nAPh/AAAAAAAA+H/M9lJ5nM4jQAAAAAAAAPh//1aBaTOeJEAWYdeAJ3YoQAAAAAAAAPh/AAAA\nAAAA+H8AAAAAAAD4fwAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/AAAAAAAA+H8A\nAAAAAAD4fwAAAAAAAPh/AAAAAAAA+H/IBgq2rnYtQAAAAAAAAPh/AAAAAAAA+H+XXcgl6Eww\nQAAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4fwAAAAAA\nAPh/OgsQS24DIEAAAAAAAAD4fwAAAAAAAPh/AAAAAAAA+H8MAMiZvKMlQAAAAAAAAPh/AAAA\nAAAA+H/WtHe8l2cmQLQJEfVuwiRAAAAAAAAA+H8AAAAAAAD4f7sVZlZ1di5AAAAAAAAA+H/t\nGdTwAVAmQAwAyJm8oyVAAAAAAAAA+H8AAAAAAAD4fxNtIfTYhS9ACVzR6Rs5KUDeuBcx5bIn\nQAAAAAAAAPh/AAAAAAAA+H+6IUMPbvEpQCa6iIL4YydAcEgwFt94J0AAAAAAAAD4f/Xf4nYX\nXRxAAAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/AAAA\n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\nPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAA\nAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAA\nAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8A\nAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADg\nPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAA\nAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAA\nAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8A\nAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADg\nPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAA\nAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAA\nAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8A\nAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADg\nPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAA\nAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAA\nAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8A\nAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADg\nPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAA\nAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAA\nAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8A\nAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADg\nPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAA\nAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAA\nAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8A\nAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADg\nPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAA\nAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAAAAAA4D8AAAAAAADgPwAAAAAAAOA/AAAA\nAAAA4D8AAAAAAADgPwhhbmNob3JfeQMA8AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAFYW5nbGUCAQAAAAAAAAAABGZpbGwCBAAAAAAAAAAAAAAAAAAAgD8MZmlsbF9vcGFjaXR5\nAgEAAAAAAADwPwZpdGFsaWMCAwAIbWFya2Rvd24DBPABAQEBAQEBAQEBAQEBAQEBAQEBAQEB\nAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB\nAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB\nAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB\nAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB\nAQEBBHNpemUCAQAAAAAAABBABHRleHQDBfABBgcHBggHBggJBwcHBgcHBgcHCQcGCQcHCQcH\nBwcGCQcHBwcHBwcHBwYHBggGBwcHBwgHBwYGBwcGBggHBgYGBwYGBwYHBgcHBwcHBwkHBgcH\nBggHBwYHBwYGBwYHBgcHBgYGBwcHBgcGCAcHBwcHBgcIBwcGBwYHBwYHBwkGBwgHBwYIBgcG\nBwYHBwYHBggHBwcHBgcGBgcHBgcJCQcHBwcGBwcGCQcHBwkHBwcIBwkGBwYHBwgHBwYHBgkH\nBwcIBwcJBwYJCAgHBwYHBwcHBwcHBwgHBwcHBwYHBgYHBgYGBgkGCAYHBgYHBwcHBwYIBndl\naWdodAIBAAAAAAAAeUABeAEA8AEAAAAAAAD4fwAAAAAAAPh/5vQDxhKmMEAAAAAAAAD4fyOb\nmQB+gihAGrZ82VRzJkAAAAAAAAD4fwAAAAAAAPh/TEeJQsdOKkAAAAAAAAD4fwAAAAAAAPh/\nAAAAAAAA+H8AAAAAAAD4f/y94Qt9zixAAAAAAAAA+H8AAAAAAAD4f3h8oEq24SlA7RnU8AFQ\nJkDDMAuYAGcqQAAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/AAAAAAAA+H8z2K24\n/UstQAAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4f8z2UnmcziNAAAAAAAAA+H//VoFpM54kQBZh\n14AndihAAAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/\nAAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4f8gGCraudi1AAAAAAAAA\n+H8AAAAAAAD4f5ddyCXoTDBAAAAAAAAA+H8AAAAAAAD4fwAAAAAAAPh/AAAAAAAA+H8AAAAA\nAAD4fwAAAAAAAPh/AAAAAAAA+H86CxBLbgMgQAAAAAAAAPh/AAAAAAAA+H8AAAAAAAD4fwwA\nyJm8oyVAAAAAAAAA+H8AAAAAAAD4f9a0d7yXZyZAtAkR9W7CJEAAAAAAAAD4fwAAAAAAAPh/\nuxVmVnV2LkAAAAAAAAD4f+0Z1PABUCZADADImbyjJUAAAAAAAAD4fwAAAAAAAPh/E20h9NiF\nL0AJXNHpGzkpQN64FzHlsidAAAAAAAAA+H8AAAAAAAD4f7ohQw9u8SlAJrqIgvhjJ0BwSDAW\n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\n"},"evals":[],"jsHooks":[]}</script>
+</div>
+</section>
+<section id="ggsql-chunk-for-bar-plot-using-duckdb" class="level1">
+<h1>GGSQL chunk for bar plot using DuckDB</h1>
+<div class="code-box">
+<pre><span class="comment">```{ggsql}</span>
+<span class="comment">#| connection: "duckdb://./disaster.duckdb"</span>
+
+<span class="keyword">FROM</span> natural_disaster
+
+<span class="keyword">WHERE</span> Country <span class="keyword">IN</span> (
+    <span class="string">'Brazil'</span>,
+    <span class="string">'India'</span>,
+    <span class="string">'China'</span>,
+    <span class="string">'South Africa'</span>,
+    <span class="string">'Russian Federation'</span>
+)
+
+<span class="keyword">VISUALIZE</span>
+
+<span class="keyword">DRAW</span> bar
+
+    <span class="keyword">MAPPING</span>
+        <span class="column">Country</span> <span class="keyword">AS</span> x,
+        <span class="column">"Disaster Subgroup"</span> <span class="keyword">AS</span> fill
+
+<span class="comment">```</span>
+</pre>
+</div>
+<div class="cell">
+<ggsql-hep class="ggsql_hep html-widget html-fill-item" id="htmlwidget-13e4625624e4e57b2711" style="display:block;width:100%;height:464px;"></ggsql-hep>
+<script type="application/json" data-for="htmlwidget-13e4625624e4e57b2711">{"x":{"hep":"SEVQSFBMT1QCAAAAAABIRUFELQAAABNfX2hlcGhhZXN0dXNfcm9vdF9fAQAAgD8AAIA/AACA\nPwAAgD8AAAUwLjQuMWZvbnQDAAAAAgAAU1RSU48AAAAMBmNpcmNsZQpCaW9sb2dpY2FsDkNs\naW1hdG9sb2dpY2FsEUV4dHJhLXRlcnJlc3RyaWFsC0dlb3BoeXNpY2FsDEh5ZHJvbG9naWNh\nbA5NZXRlb3JvbG9naWNhbAZCcmF6aWwFQ2hpbmEFSW5kaWESUnVzc2lhbiBGZWRlcmF0aW9u\nDFNvdXRoIEFmcmljYUdFT00BAAAAAFNIRVR+CAAAAfsQGgRiYXNlGwAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAtibG9ja19xdW90ZZ8BAAAAAAABBAEC9ihcj8L14D8BAAAAAAAAAAAA\nAAAAAQMAAAAAAADwPwAAAAAAAAAAAAMAAAAAAADwPwAAAAAAAAAAAAEAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAACAAAAAAAA8D8AAQQBApqZmZmZmck/AQEAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAADAAAAAAAA0D8AAAAADGJyb2tlbl9pbWFnZWoAAAAAAAEAAACAPwAAAAAA\nAAAAAACAPwAAAAAAAQAAAAAAAAD4PwAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAACAPwEAAAAA\nAAAACEAAAAAAAAAACEAAAAAAAAAACEAAAAAAAAAACEAAAAAABGNvZGVnAQltb25vc3BhY2UA\nAAABATMzMzMzM+s/AAAAAAAAAAAAAAAAAAABAwAAAAAAAMg/AwAAAAAAAMg/AwAAAAAAAMg/\nAwAAAAAAAMg/AQQBAuxRuB6F67E/AQAAAQMAAAAAAADIPwAAAApjb2RlX2Jsb2NrlAEBCW1v\nbm9zcGFjZQAAAAEBMzMzMzMz6z8AAAAAAAAAAAEAMzMzMzMz9z8AAAAAAQMAAAAAAADwPwAA\nAAAAAAAAAAMAAAAAAADwPwAAAAAAAAAAAAECAAAAAAAA8D8CAAAAAAAA8D8CAAAAAAAA8D8C\nAAAAAAAA8D8BBAEC7FG4HoXrsT8BAAABAwAAAAAAAMg/AAAAA2RlbBwAAAAAAAAAAAEBAAAA\nAAAAAAAAAAAAAAAAAAAAAmVtHAAAAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACaDGnAQAB\n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\nAAAAAAAA8D8AAQwAAAAAAAAAAPA/AAE6AAAAAAAAKECQAwECAAAAAAAA4D8AAAAAAADgPwAA\nAAAAAAAA8D8AAAAAAAAAAAAAAAAAAAAAAPA/ADIAAAAAAAAYQAAAAAAAAFhAkAMBAgAAAAAA\nAAAA8D8AAAAAAAAAAAAAAAAAAAAAAPA/ADoAAAAAAAAoQJADAQIAAAAAAADgPwAAAAAAAOA/\nAAAAAAAAAADwPwAAAAAAAAAAAAAAAAAAAAAA8D8AGgAAAAAAAOA/AAAAAAAA4D8AAQAAAAAA\nAPA/AAAAAAAA4D8FZW4tVVMAU0NBTL0BAAADBGZpbGzdAQEAAQEGAgECAgIDAgQCBQIGAQIG\nAAAAAM/Ozj6mpSU/AACAP/Tzcz+FhAQ/AAAAAAAAgD8AAAAAiYgIP62srD4AAIA/9PNzP8TD\nQz8AAAAAAACAP4iHBz+trKw+k5ISPwAAgD+ioSE/y8pKP/LxcT8AAIA/AAEBBgIBAgICAwIE\nAgUCBgYKQmlvbG9naWNhbA5DbGltYXRvbG9naWNhbBFFeHRyYS10ZXJyZXN0cmlhbAtHZW9w\naHlzaWNhbAxIeWRyb2xvZ2ljYWwOTWV0ZW9yb2xvZ2ljYWwAAAAABHBvczFWAQABAQUCBwII\nAgkCCgILAAABAQUCBwIIAgkCCgILBQZCcmF6aWwFQ2hpbmEFSW5kaWESUnVzc2lhbiBGZWRl\ncmF0aW9uDFNvdXRoIEFmcmljYQAAAAAEcG9zMnYAAAEAAAAAAADgQMAAAAAAACaGQAAAAQEE\nAQAAAAAAAAAAAQAAAAAAAGlAAQAAAAAAAHlAAQAAAAAAwIJABAEwAzIwMAM0MDADNjAwAQAE\nAQAAAAAAAFlAAQAAAAAAwHJAAQAAAAAAQH9AAQAAAAAA4IVAAAAAQ09NUPEAAABNARNfX2hl\ncGhhZXN0dXNfcm9vdF9fAQEBAQAAAAAAAPA/AQEAAAAAAADwPwAGAAAAAAAABgAAAAAAAAER\nAQEBAQALZ2dzcWxfcGFuZWwBE19faGVwaGFlc3R1c19yb290X194AAAAAAABB0NvdW50cnkB\nBWNvdW50AWABARFEaXNhc3RlciBTdWJncm91cARmaWxsAEABPQIDBGZpbGwABGZpbGwMZmls\nbF9vcGFjaXR5AQGamZmZmZnpPwZzdHJva2UBBAAAAAAAAAAAAAAAAAAAgD8AAAAAAAEBARNf\nX2hlcGhhZXN0dXNfcm9vdF9fUExPVGMEAAABC2dnc3FsX3BhbmVsAdMIC2dnc3FsX3BhbmVs\nBQRmaWxsBGZpbGwBeARwb3MxAngyBHBvczEBeQRwb3MyAnkyBHBvczIAAAAAAAAAAgkBBHBv\nczEAAgAJAQRwb3MyAAAAAAABAAAAAAH4BwRyZWN0AAkEZmlsbAEFGgECBAUGAQIEBQYBAgQF\nBgECAwQFBgECBAUGDGZpbGxfb3BhY2l0eQIBmpmZmZmZ6T8Gc3Ryb2tlAgQAAAAAAAAAAAAA\nAAAAAIA/AXgBBRoHBwcHBwgICAgICQkJCQkKCgoKCgoLCwsLCwJ4MgEFGgcHBwcHCAgICAgJ\nCQkJCQoKCgoKCgsLCwsLB3gyX2JhbmQBABrNzMzMzMzcP83MzMzMzNw/zczMzMzM3D/NzMzM\nzMzcP83MzMzMzNw/zczMzMzM3D/NzMzMzMzcP83MzMzMzNw/zczMzMzM3D/NzMzMzMzcP83M\nzMzMzNw/zczMzMzM3D/NzMzMzMzcP83MzMzMzNw/zczMzMzM3D/NzMzMzMzcP83MzMzMzNw/\nzczMzMzM3D/NzMzMzMzcP83MzMzMzNw/zczMzMzM3D/NzMzMzMzcP83MzMzMzNw/zczMzMzM\n3D/NzMzMzMzcP83MzMzMzNw/BnhfYmFuZAEAGs3MzMzMzNy/zczMzMzM3L/NzMzMzMzcv83M\nzMzMzNy/zczMzMzM3L/NzMzMzMzcv83MzMzMzNy/zczMzMzM3L/NzMzMzMzcv83MzMzMzNy/\nzczMzMzM3L/NzMzMzMzcv83MzMzMzNy/zczMzMzM3L/NzMzMzMzcv83MzMzMzNy/zczMzMzM\n3L/NzMzMzMzcv83MzMzMzNy/zczMzMzM3L/NzMzMzMzcv83MzMzMzNy/zczMzMzM3L/NzMzM\nzMzcv83MzMzMzNy/zczMzMzM3L8BeQEAGgAAAAAAAAAAAAAAAAAAGEAAAAAAAAA1QAAAAAAA\nADZAAAAAAACgYkAAAAAAAAAAAAAAAAAAABBAAAAAAACAQkAAAAAAAGBjQAAAAAAA0HtAAAAA\nAAAAAAAAAAAAAAA5QAAAAAAAgEFAAAAAAACAR0AAAAAAABByQAAAAAAAAAAAAAAAAAAAGEAA\nAAAAAAA8QAAAAAAAAD1AAAAAAAAAQkAAAAAAAEBYQAAAAAAAAAAAAAAAAAAAGEAAAAAAAAAz\nQAAAAAAAADVAAAAAAAAAUEACeTIBABoAAAAAAAAYQAAAAAAAADVAAAAAAAAANkAAAAAAAKBi\nQAAAAAAAoGVAAAAAAAAAEEAAAAAAAIBCQAAAAAAAYGNAAAAAAADQe0AAAAAAABiFQAAAAAAA\nADlAAAAAAACAQUAAAAAAAIBHQAAAAAAAEHJAAAAAAABAe0AAAAAAAAAYQAAAAAAAADxAAAAA\nAAAAPUAAAAAAAABCQAAAAAAAQFhAAAAAAAAAYEAAAAAAAAAYQAAAAAAAADNAAAAAAAAANUAA\nAAAAAABQQAAAAAAAAFdAc2hwcwMAAAACAABpbWdzAwAAAAIAAA=="},"evals":[],"jsHooks":[]}</script>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

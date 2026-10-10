@@ -1,0 +1,26 @@
+<div class="code-box">
+<pre>
+<span class="comment">```{ggsql}</span>
+<span class="comment">#| connection: "duckdb://./disaster.duckdb"</span>
+
+<span class="keyword">FROM</span> natural_disaster
+
+<span class="keyword">WHERE</span> Country <span class="keyword">IN</span> (
+    <span class="string">'Brazil'</span>,
+    <span class="string">'India'</span>,
+    <span class="string">'China'</span>,
+    <span class="string">'South Africa'</span>,
+    <span class="string">'Russian Federation'</span>
+)
+
+<span class="keyword">VISUALIZE</span>
+
+<span class="keyword">DRAW</span> bar
+
+    <span class="keyword">MAPPING</span>
+        <span class="column">Country</span> <span class="keyword">AS</span> x,
+        <span class="column">"Disaster Subgroup"</span> <span class="keyword">AS</span> fill
+
+<span class="comment">```</span>
+</pre>
+</div>

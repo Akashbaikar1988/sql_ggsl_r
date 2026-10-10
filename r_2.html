@@ -1,0 +1,18 @@
+<div class="code-box">
+<pre>
+<span class="comment">```{r}</span>
+<span class="comment">#| echo: false</span>
+<span class="comment">#| include: true</span>
+<span class="comment">#| context: setup</span>
+<span class="comment">#| message: false</span>
+<span class="comment">#| warning: false</span>
+<span class="column">disaster_data</span> &lt;- <span class="function">readxl::</span><span class="function">read_xlsx</span>(<span class="string">"public_emdat.xlsx"</span>)
+<span class="column">db1</span> &lt;- <span class="function">dbConnect</span>(<span class="column"><span class="function">duckdb</span>(),"disaster.duckdb")
+<span class="function">dbWriteTable</span>(
+    <span class="column">db1</span>,
+    <span class="string">"natural_disaster"</span>,
+    <span class="column">disaster_data</span>,overwrite = TRUE
+)
+<span class="comment">```</span>
+</pre>
+</div>

@@ -1,0 +1,47 @@
+<div class="code-box">
+<pre>
+<span class="comment">```{ggsql}</span>
+<span class="comment">#| echo: false</span>
+<span class="keyword">SELECT</span>
+    <span class="column"></span>LN(<span class="column">"Total Damage ('000 US$)"</span> + 1) <span class="keyword"></span>AS</span> cost,
+    <span class="column"></span>LN(<span class="column">"Total Affected"</span> + 1) <span class="keyword"></span>AS</span> affected,
+    <span class="column">"Start Year"</span>,
+    <span class="column">"Total Affected"</span>,
+    <span class="column">"Total Deaths"</span>,
+    <span class="column">"Country"</span>,
+    <span class="column">"Disaster Subgroup"</span>
+<span class="keyword">FROM</span> r:disaster_data
+<span class="keyword">WHERE</span> <span class="column">"Country"</span><span class="keyword"></span>IN</span> (
+    'Brazil',
+    'India',
+    'China',
+    'South Africa',
+    'Russian Federation'
+)
+<span class="keyword">AND</span><span class="column">"Start Year"</span><span class="keyword">IN</span> (
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+)
+<span class="keyword">VISUALIZE</span>
+    cost <span class="keyword">AS</span> x,
+    affected <span class="keyword">AS</span> y
+<span class="keyword"></span>DRAW</span> point
+<span class="keyword"></span><span class="keyword">MAPPING</span>
+    <span class="column">Country</span> <span class="keyword">AS</span> stroke,
+    <span class="column">Country</span> <span class="keyword">AS</span> fill
+<span class="keyword">SETTING</span>
+    size =&gt; 6
+<span class="keyword">DRAW</span> text
+<span class="keyword">MAPPING</span>
+    <span class="column">"Disaster Subgroup"</span> AS label
+<span class="keyword"></span>SETTING</span>
+    fontsize =&gt; 4,
+    vjust =&gt; 1
+<span class="keyword">LABEL</span>
+    title =&gt; 'Log(Total Damage) vs Log(Total Affected)'
+<span class="comment">```</span>
+</pre>
+</div>

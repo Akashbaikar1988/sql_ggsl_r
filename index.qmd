@@ -1,0 +1,157 @@
+---
+title: "Integrating SQL, GGSQL and R"
+author: "Dr. Akash Kumar Baikar"
+abstract: "A step-by-step tutorial on combining native SQL queries, plotting with ggsql, and integrating SQL data in R within a single Quarto document using knitr." 
+format:
+    html:
+        theme: minty
+        css: styles.css
+        toc: true
+        toc-depth: 3   # optional: controls how many heading levels appear
+        toc-location: left   # optional: can be left, right, or default
+---
+
+# R chunk to load the necessary packages
+```{r}
+#| echo: false
+#| context: setup
+#| message: false
+#| warning: false
+#install.packages(
+ # "ggsql",
+ # repos = c("https://posit-dev.r-universe.dev",
+ #           "https://cloud.r-project.org")
+#)
+library(Statamarkdown)
+library(ggsql)
+library(knitr)
+library(DBI)
+library(duckdb)
+```
+{{< include r_1.html >}}
+
+# R chunk to create DuckDB data connection using local file
+
+{{< include r_2.html >}}
+```{r}
+#| echo: false
+#| context: setup
+#| message: false
+#| warning: false
+# Create a DuckDB connection
+disaster_data<-readxl::read_xlsx("public_emdat.xlsx")
+db1<-dbConnect(duckdb(),)
+dbWriteTable(db1,"natural_disaster",disaster_data)
+db2<-dbConnect(duckdb(),"disaster.duckdb")
+dbWriteTable(db2,"natural_disaster",disaster_data)
+dbDisconnect(db2, shutdown = TRUE)
+```
+# SQL chuck to display selected columns from the natural disaster database
+{{< include r_3.html >}}
+```{sql}
+--| echo: false
+--| connection: db1
+--| tblestyle: striped
+--| tbl-cap: "Table-1: First 5 rows of data"
+SELECT 
+    Country,
+    "Start Year",
+    "End Year",
+    "Total Affected"
+FROM natural_disaster
+LIMIT 5;
+```
+# SQL chunk to filter data and save as R dataframe
+{{< include code_chunk_5.html >}} 
+
+```{sql}
+--| connection: db1
+--| output.var: disaster_brics
+--| echo: false
+SELECT
+    Country,
+    "Start Year",
+    SUM("Total Deaths") AS total_deaths
+FROM natural_disaster
+WHERE Country IN (
+    'Brazil',
+    'India',
+    'China',
+    'South Africa',
+    'Russian Federation'
+)
+GROUP BY
+    Country, "Start Year"
+ORDER BY
+    Country, "Start Year";
+```
+
+# R chunk to validate the BRICS data
+{{< include r_6.html >}} 
+```{r}
+#| echo: false
+#| context: setup
+#| message: false
+#| warning: false
+table(disaster_brics$Country)
+```
+
+
+# GGSQL chunk for scatter plot using R dataframe
+{{< include sql_1.html >}}
+
+```{ggsql}
+#| echo: false
+SELECT
+    LN("Total Damage ('000 US$)" + 1) AS cost,
+    LN("Total Affected" + 1) AS affected,
+    "Start Year",
+    "Total Affected",
+    "Total Deaths",
+    "Country",
+    "Disaster Subgroup"
+FROM r:disaster_data
+WHERE Country IN (
+    'Brazil',
+    'India',
+    'China',
+    'South Africa',
+    'Russian Federation'
+)
+AND  "Start Year" in (2020, 2021, 2022, 2023, 2024)
+VISUALIZE
+    cost AS x,
+    affected AS y
+DRAW point
+MAPPING
+    Country AS stroke,
+    Country AS fill
+SETTING
+      size => 5
+DRAW text
+MAPPING
+        "Disaster Subgroup" AS label
+SETTING
+    fontsize => 4,
+      vjust=>1
+LABEL
+    title => 'Log(Total Damage) vs Log(Total Affected)'
+```
+
+# GGSQL chunk for bar plot using DuckDB
+{{< include sql_2.html >}}
+```{ggsql} 
+#| connection: "duckdb://./disaster.duckdb"
+#| echo: false
+    FROM natural_disaster
+    WHERE Country IN (
+    'Brazil',
+    'India',
+    'China',
+    'South Africa',
+    'Russian Federation'
+)
+VISUALIZE
+DRAW bar 
+    MAPPING Country AS x, "Disaster Subgroup" AS fill
+```

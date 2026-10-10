@@ -1,0 +1,24 @@
+<div class="code-box">
+<pre>
+<span class="comment">```{sql}</span>
+<span class="comment">--| connection: db1</span>
+<span class="comment">--| output.var: disaster_brics</span>
+<span class="keyword">SELECT</span>
+    <span class="column">Country</span>,
+    <span class="column">"Start Year"</span>,
+    <span class="keyword">SUM</span>(<span class="column">"Total Deaths"</span>) <span class="keyword">AS</span> total_deaths
+<span class="keyword">FROM</span> natural_disaster
+<span class="keyword">WHERE</span> Country <span class="keyword">IN</span> (
+    <span class="string">'Brazil'</span>,
+    <span class="string">'India'</span>,
+    <span class="string">'China'</span>,
+    <span class="string">'South Africa'</span>,
+    <span class="string">'Russian Federation'</span>
+)
+<span class="keyword">GROUP BY</span>
+    Country, <span class="column">"Start Year"</span>
+<span class="keyword">ORDER BY</span>
+    Country, <span class="column">"Start Year";</span>
+<span class="comment">```</span>
+</pre>
+</div>
