@@ -43,7 +43,7 @@ disaster_data<-readxl::read_xlsx("public_emdat.xlsx")
 db1<-dbConnect(duckdb(),)
 dbWriteTable(db1,"natural_disaster",disaster_data)
 db2<-dbConnect(duckdb(),"disaster.duckdb")
-dbWriteTable(db2,"natural_disaster",disaster_data)
+dbWriteTable(db2,"natural_disaster",disaster_data,overwrite = TRUE)
 dbDisconnect(db2, shutdown = TRUE)
 ```
 # SQL chuck to display selected columns from the natural disaster database
